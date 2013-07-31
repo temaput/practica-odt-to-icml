@@ -16,7 +16,7 @@
     <xsl:key name="paragraph-parent-styles" match="style:style"  
         use="@style:parent-style-name"/>
 
-    <xsl:variable name="styles_file" select="'styles.xml'"/>
+    <xsl:variable name="styles_file" select="'data/styles.xml'"/>
     <xsl:variable name="content_file" select="/"/>
 
     <xsl:template match="/">
@@ -55,17 +55,18 @@
     <xsl:template match="text:p | text:h">
         <ParagraphStyleRange>
             <xsl:attribute name="AppliedParagraphStyle">
-
                 <xsl:text>ParagraphStyle/</xsl:text>
                 <xsl:call-template name="getParaStyle">
                     <xsl:with-param name="style-name" select="@text:style-name"/>
                 </xsl:call-template>
             </xsl:attribute>
 
-            <xsl:call-template name="getCustomFormatting">
-                <xsl:with-param name="styleName" select="@text:style-name"/>
-            </xsl:call-template>
+            <!-->
+                <xsl:call-template name="getCustomFormatting">
+                    <xsl:with-param name="styleName" select="@text:style-name"/>
+                </xsl:call-template>
 
+            </!-->
             <xsl:apply-templates/>
             <xsl:if test="not(position()=last())">
                 <Br/>
@@ -121,7 +122,6 @@
     <xsl:template match="text:span">
         <CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]">
             <xsl:call-template name="getCustomFormatting">
-                <xsl:with-param name="styleName" select="@text:style-name"/>
             </xsl:call-template>
 
             <xsl:apply-templates/>
@@ -131,6 +131,15 @@
         <Content><xsl:text>&#2028;</xsl:text></Content>
     </xsl:template>
 
+    <xsl:template match="text:p/text()|text:h/text()">
+        <CharacterStyleRange AppliedCharacterStyle="CharacterStyle/$ID/[No character style]">
+            <xsl:call-template name="getCustomFormatting">
+            </xsl:call-template>
+            <Content>
+                <xsl:value-of select="."/>
+            </Content>
+        </CharacterStyleRange>
+    </xsl:template>
     <xsl:template match="text()">
         <Content>
             <xsl:value-of select="."/>
@@ -139,7 +148,20 @@
 
     <!-- ============================ getting styles ====================   -->
     <xsl:template name="getCustomFormatting">
-        <xsl:param name="styleName"/>
+        <xsl:variable name="styleName">
+            <xsl:value-of select="@text:style-name"/>
+        </xsl:variable>
+        <xsl:variable name="parentStyleName">
+            <xsl:value-of select="parent::*[1][self::text:p|self::text:h]/@text:style-name"/>
+        </xsl:variable>
+
+        <xsl:message>
+            <xsl:text>styleName: </xsl:text>
+            <xsl:value-of select="$styleName"/>
+            <xsl:text>&#09;parentStyleName: </xsl:text>
+            <xsl:value-of select="$parentStyleName"/>
+        </xsl:message>
+
         <xsl:if test="key('auto-styles', $styleName)">
             <xsl:variable name="fname">
                 <xsl:value-of
@@ -155,18 +177,22 @@
             </xsl:variable>
             <xsl:variable name="fweight">
                 <xsl:value-of 
-                    select="key('auto-styles', $styleName)/style:text-properties/@fo:font-weight"/>
+                    select="concat(
+                    key('auto-styles', $styleName)/style:text-properties/@fo:font-weight,
+                    key('auto-styles', $parentStyleName)/style:text-properties/@fo:font-weight)"/>
             </xsl:variable>
             <xsl:variable name="fstyle">
                 <xsl:value-of 
-                    select="key('auto-styles', $styleName)/style:text-properties/@fo:font-style"/>
+                    select="concat(
+                    key('auto-styles', $styleName)/style:text-properties/@fo:font-style,
+                    key('auto-styles', $parentStyleName)/style:text-properties/@fo:font-style)"/>
             </xsl:variable>
             <xsl:variable name="fbold">
-                <xsl:value-of select="$fweight='bold'"/>
+                <xsl:value-of select="starts-with($fweight, 'bold')"/>
             </xsl:variable>
             <xsl:variable name="fitalic">
-                <xsl:value-of select="$fstyle='italic' 
-                    or $fstyle='oblique'"/>
+                <xsl:value-of select="starts-with($fstyle,'italic') 
+                    or starts-with($fstyle, 'oblique')"/>
             </xsl:variable>
 
             <xsl:variable name="font-style">
