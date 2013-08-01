@@ -128,7 +128,17 @@
         </CharacterStyleRange>
     </xsl:template>
     <xsl:template match="text:line-break">
-        <Content><xsl:text>&#2028;</xsl:text></Content>
+        <Content><xsl:text>&#10;</xsl:text></Content>
+    </xsl:template>
+    <xsl:template match="text:tab">
+        <Content><xsl:text>&#09;</xsl:text></Content>
+    </xsl:template>
+    <xsl:template match="text:s">
+        <Content>
+            <xsl:call-template name="printWhitespaces">
+                <xsl:with-param name="count" select="number(@text:c)"/>
+            </xsl:call-template>
+        </Content>
     </xsl:template>
 
     <xsl:template match="text:p/text()|text:h/text()">
@@ -147,18 +157,36 @@
     </xsl:template>
 
     <!-- ============================ getting styles ====================   -->
+    <xsl:template name="printWhitespaces">
+        <xsl:param name="count"/>
+        <xsl:text> </xsl:text>
+        <xsl:if test="$count &gt; 1">
+            <xsl:call-template name="printWhitespaces">
+                <xsl:with-param name="count" select="$count - 1"/>
+            </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
     <xsl:template name="getCustomFormatting">
         <xsl:variable name="styleName">
-            <xsl:value-of select="@text:style-name"/>
+            <xsl:choose>
+                <xsl:when test="self::text()">
+                    <xsl:value-of select="parent::*[1]/@text:style-name"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="@text:style-name"/>
+                </xsl:otherwise>
+            </xsl:choose>
         </xsl:variable>
         <xsl:variable name="parentStyleName">
             <xsl:value-of select="parent::*[1][self::text:p|self::text:h]/@text:style-name"/>
         </xsl:variable>
 
         <xsl:message>
-            <xsl:text>styleName: </xsl:text>
+            <xsl:text>tag is: </xsl:text>
+            <xsl:value-of select="name(.)"/>
+            <xsl:text>&#10;styleName: </xsl:text>
             <xsl:value-of select="$styleName"/>
-            <xsl:text>&#09;parentStyleName: </xsl:text>
+            <xsl:text>&#10;parentStyleName: </xsl:text>
             <xsl:value-of select="$parentStyleName"/>
         </xsl:message>
 
@@ -169,11 +197,15 @@
             </xsl:variable>  
             <xsl:variable name="fposition">
                 <xsl:value-of 
-                    select="key('auto-styles', $styleName)/style:text-properties/@style:text-position"/>
+                    select="concat(
+                    key('auto-styles', $styleName)/style:text-properties/@style:text-position,
+                    key('auto-styles', $parentStyleName)/style:text-properties/@style:text-position)"/>
             </xsl:variable>
             <xsl:variable name="funderline">
                 <xsl:value-of 
-                    select="key('auto-styles', $styleName)/style:text-properties/@style:text-underline-style"/>
+                    select="concat(
+                    key('auto-styles', $styleName)/style:text-properties/@style:text-underline-style,
+                    key('auto-styles', $parentStyleName)/style:text-properties/@style:text-underline-style)"/>
             </xsl:variable>
             <xsl:variable name="fweight">
                 <xsl:value-of 
@@ -214,7 +246,9 @@
                     <xsl:attribute name="FontStyle" select="$font-style"/>
             </xsl:if>
             <xsl:if test="string-length($funderline)">
-                <xsl:attribute name="Underline" select="'true'"/>
+                <xsl:if test="not(starts-with($funderline, 'none'))">
+                    <xsl:attribute name="Underline" select="'true'"/>
+                </xsl:if>
             </xsl:if>
             <xsl:if test="string-length($fposition)">
                 <xsl:choose>
@@ -226,11 +260,13 @@
                     </xsl:when>
                 </xsl:choose>
             </xsl:if>
-            <xsl:if test="$fname='Symbol'">
-                <Properties>
-                        <AppliedFont type="string">Symbol</AppliedFont>
-                </Properties>
-            </xsl:if>
+            <!-->
+                <xsl:if test="$fname='Symbol'">
+                    <Properties>
+                            <AppliedFont type="string">Symbol</AppliedFont>
+                    </Properties>
+                </xsl:if>
+            </!-->
 
         </xsl:if>
     </xsl:template>
