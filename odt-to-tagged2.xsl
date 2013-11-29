@@ -58,7 +58,6 @@
         <!-- also insert CR before every first para in list-item -->
         <xsl:if test="parent::text:list-item and count(parent::text:list-item/*[1]|.)=1">
             <xsl:text>&#xD;&#xA;</xsl:text>
-            <xsl:message><xsl:value-of select="."/></xsl:message>
         </xsl:if>
         <xsl:text>&lt;ParaStyle:</xsl:text>
 
