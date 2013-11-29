@@ -1,5 +1,5 @@
-remotepath=~/share/xml
-file=test2.odt
+remotepath=~/share/Documents/text-proc/indesign
+file="дефис.odt"
 xslt=odt-to-tagged2.xsl
 result=results/test.txt
 cp $remotepath/$file data

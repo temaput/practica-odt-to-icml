@@ -34,14 +34,32 @@
     </xsl:template>
 
     <xsl:template match="office:text">
-        <xsl:apply-templates select="table:table | text:h | text:p"/>
+        <xsl:apply-templates select="table:table | text:h | text:list | text:p"/>
+    </xsl:template>
+
+
+    <!-- ===========================list processing =============  -->
+    <xsl:template match="text:list">
+        <xsl:apply-templates select="descendant::text:list-item"/>
+    </xsl:template>
+
+    <xsl:template match="text:list-item">
+        <!-- here we could do something to preserve bullets and numbers but
+             instead we just do nothing here -->
+        <xsl:apply-templates select="text:p | text:h"/>
     </xsl:template>
 
 
     <!-- ========================== text processing =================== -->
     <xsl:template match="text:p | text:h">
         <!-- processing main para tags -->
-        <xsl:if test="preceding-sibling::*[1][self::text:p|self::text:h]"><xsl:text>&#xD;&#xA;</xsl:text></xsl:if>
+        <!-- insert return if the closest preceding is also para or heading or list -->
+        <xsl:if test="preceding-sibling::*[1][self::text:p|self::text:h|self::text:list]"><xsl:text>&#xD;&#xA;</xsl:text></xsl:if>
+        <!-- also insert CR before every first para in list-item -->
+        <xsl:if test="parent::text:list-item and count(parent::text:list-item/*[1]|.)=1">
+            <xsl:text>&#xD;&#xA;</xsl:text>
+            <xsl:message><xsl:value-of select="."/></xsl:message>
+        </xsl:if>
         <xsl:text>&lt;ParaStyle:</xsl:text>
 
         <xsl:call-template name="getParaStyle">
