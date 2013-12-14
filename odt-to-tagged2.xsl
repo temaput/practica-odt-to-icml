@@ -26,6 +26,9 @@
     <!-- =================== main() ===================================== -->
     <xsl:template match="/office:document-content">
         <xsl:text>&lt;UNICODE-WIN&gt;&#xD;&#xA;&lt;Version:8&gt;</xsl:text>
+        <!-- lets define base NormalParagraphStyle so that we can inherit all other styles -->
+
+        <xsl:text>&lt;DefineParaStyle:NormalParagraphStyle&gt;</xsl:text>
         <!-- go pick all styles and make style definitions at the begining -->
         <xsl:apply-templates 
             select="document($styles_file)/office:document-styles/office:styles/style:style"/>
@@ -339,13 +342,14 @@
                 </xsl:if>
                 <xsl:text>&gt;</xsl:text>
             </xsl:if>
-            <!-->
-                <xsl:if test="$fname='Symbol'">
-                    <Properties>
-                            <AppliedFont type="string">Symbol</AppliedFont>
-                    </Properties>
+            <xsl:if test="$fname='Symbol'">
+                <xsl:text>&lt;cFont:</xsl:text>
+                <xsl:if test="not($clear)">
+                    <!-- if clear is set then we should give empty tag here -->
+                    <xsl:value-of select="$fname"/>
                 </xsl:if>
-            </!-->
+                <xsl:text>&gt;</xsl:text>
+            </xsl:if>
         </xsl:if>
     </xsl:template>
 
@@ -419,7 +423,7 @@
             <xsl:when test="key('paragraph-styles', $style_name)">
                 <xsl:text>&#xD;&#xA;&lt;DefineParaStyle:</xsl:text>
                 <xsl:value-of select="$style_name"/>
-                <xsl:text>&gt;</xsl:text>
+                <xsl:text>=&lt;BasedOn:NormalParagraphStyle&gt;&gt;</xsl:text>
             </xsl:when>
             <xsl:otherwise>
                 <xsl:if test="key('paragraph-parent-styles', $style_name)">
